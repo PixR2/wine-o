@@ -4,7 +4,6 @@ package wineo_api_service
 
 import (
 	context "context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	rethink "gopkg.in/gorethink/gorethink.v4"
@@ -49,40 +48,20 @@ func (r *mutationResolver) AddWine(ctx context.Context, winery string, varietal 
 
 type queryResolver struct{ *Resolver }
 
-func (r *queryResolver) Wine(ctx context.Context, winery string, vintage int, bottle_size int) (*Wine, error) {
+func (r *queryResolver) Wine(ctx context.Context, winery string, vintage int, bottleSize int) (*Wine, error) {
 	panic("not implemented")
 }
 
 type subscriptionResolver struct{ *Resolver }
 
 func (r *subscriptionResolver) WineAdded(ctx context.Context) (<-chan Wine, error) {
-	fmt.Println("-> func (r *subscriptionResolver) WineAdded")
 	c := make(chan Wine)
 	res, err := rethink.Table("wines").Changes().Field("new_val").Run(r.rtdb)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to subscribe to change feed of wines table")
 	}
 
-	// go func() {
-	// 	fmt.Println("func (r *subscriptionResolver) WineAdded: -> go func")
-	// 	var value Wine
-	// 	for res.Next(&value) {
-	// 		fmt.Println(value)
-
-	// 		select {
-	// 		case <-ctx.Done():
-	// 			fmt.Println("stopping rethink change set feeder")
-	// 			return
-	// 		}
-	// 	}
-	// }()
-
 	res.Listen(c)
-
-	// go func() {
-	// 	<-ctx.Done()
-	// 	res.Close()
-	// }()
 
 	return c, nil
 }

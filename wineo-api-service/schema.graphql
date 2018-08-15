@@ -1,5 +1,5 @@
 type Query {
-    wine(winery: String!, vintage: Int!, bottle_size: Int!): Wine
+    wine(winery: String!, vintage: Int!, bottleSize: Int!): Wine
 }
 
 type Mutation {

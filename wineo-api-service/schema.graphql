@@ -1,13 +1,39 @@
 type Query {
-    wine(winery: String!, vintage: Int!, bottleSize: Int!): Wine
+    # wine(winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!): Wine
+    me: User!
+    wine(winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!): Wine
+    collection(id: ID!): WineCollection
+    myCollections: [WineCollection]
+    positions(collectionID: ID!): [WinePosition]
 }
 
 type Mutation {
-    addWine(winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!): Wine
+    signup(email: String!): Boolean
+    verifyEmail(token: String!): Boolean
+    signin(email: String!, password: String!): String
+    updateUser(email: String, firstName: String, lastName: String, password: String): Boolean
+    removeUser(deleteCollections: Boolean!, reason: String): Boolean
+
+    createCollection(name: String!): ID
+    updateCollection(id: ID!, name: String!): Boolean
+    removeCollection(id: ID!): Boolean
+    addPosition(collectionID: ID!, winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!, numBottles: Int!, compartment: String): Boolean
+    updatePosition(collectionID: ID!, winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!, numBottles: Int!, compartment: String): Boolean
 }
 
 type Subscription {
-    wineAdded: Wine!
+    meChanged: User
+    positionChanged(collectionID: ID!): WinePosition
+}
+
+type User {
+    email: String!
+
+    firstName: String
+    lastName: String
+
+    emailConfirmed: Boolean!
+    hasPassword: Boolean!
 }
 
 type Wine {
@@ -26,78 +52,16 @@ type Wine {
     price: Int
 }
 
+type WineCollection {
+    id: ID!
+    name: String
+    owner: String
+    Collaborators: [String]
+}
 
-
-# type Query {
-#     wine(winery: String!, vintage: Int!, bottle_size: Int!): Wine
-#     collection(id: ID): WineCollection
-#     positions(collection_id: ID): [WinePosition]
-#     me: User
-# }
-
-# type Mutation {
-#     create_user(email: String!): Boolean
-#     verify_email(token: String!): Boolean
-#     update_user(user: User): Boolean
-
-#     create_collection(name: String!): Boolean
-#     add_position(collection_id: ID!, winery: String!, vintage: Int!, bottle_size: Int!, num_bottles: Int!, compartment: String): Boolean
-#     update_position(collection_id: ID!, winery: String!, vintage: Int!, bottle_size: Int!, num_bottles: Int!, compartment: String): Boolean
-# }
-
-# type Subscription {
-
-# }
-
-
-# "Prevents access to a field if the user doesnt have the matching role"
-# directive @hasRole(role: Role!) on FIELD_DEFINITION
-
-# enum Role {
-#     ADMIN
-#     USER
-# }
-
-
-# type Wine {
-#     winery: String!
-#     vintage: Int!
-#     bottle_size: Int!
-
-#     region: String
-#     varietal: String
-
-#     peak: Int
-#     hold: Int
-#     drink: Int
-#     taste: Int
-
-#     price: Int
-# }
-
-# type WinePosition {
-#     collection_id: ID!
-#     compartment: String
-#     wine: Wine!
-#     num_bottles: Int!
-# }
-
-# type WineCollection {
-#     id: ID!
-#     name: String
-#     owners: [User!]!
-# }
-
-
-# type Query {
-#   todos: [Todo!]!
-# }
-
-# input NewTodo {
-#   text: String!
-#   userId: String!
-# }
-
-# type Mutation {
-#   createTodo(input: NewTodo!): Todo!
-# }
+type WinePosition {
+    collectionID: ID
+    compartment: String
+    wine: Wine
+    numBottles: Int
+}

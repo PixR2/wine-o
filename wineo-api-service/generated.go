@@ -35,13 +35,27 @@ type ResolverRoot interface {
 type DirectiveRoot struct {
 }
 type MutationResolver interface {
-	AddWine(ctx context.Context, winery string, varietal string, vintage int, bottleSize int) (*Wine, error)
+	Signup(ctx context.Context, email string) (*bool, error)
+	VerifyEmail(ctx context.Context, token string) (*bool, error)
+	Signin(ctx context.Context, email string, password string) (*string, error)
+	UpdateUser(ctx context.Context, email *string, firstName *string, lastName *string, password *string) (*bool, error)
+	RemoveUser(ctx context.Context, deleteCollections bool, reason *string) (*bool, error)
+	CreateCollection(ctx context.Context, name string) (*string, error)
+	UpdateCollection(ctx context.Context, id string, name string) (*bool, error)
+	RemoveCollection(ctx context.Context, id string) (*bool, error)
+	AddPosition(ctx context.Context, collectionID string, winery string, varietal string, vintage int, bottleSize int, numBottles int, compartment *string) (*bool, error)
+	UpdatePosition(ctx context.Context, collectionID string, winery string, varietal string, vintage int, bottleSize int, numBottles int, compartment *string) (*bool, error)
 }
 type QueryResolver interface {
-	Wine(ctx context.Context, winery string, vintage int, bottle_size int) (*Wine, error)
+	Me(ctx context.Context) (User, error)
+	Wine(ctx context.Context, winery string, varietal string, vintage int, bottleSize int) (*Wine, error)
+	Collection(ctx context.Context, id string) (*WineCollection, error)
+	MyCollections(ctx context.Context) ([]*WineCollection, error)
+	Positions(ctx context.Context, collectionID string) ([]*WinePosition, error)
 }
 type SubscriptionResolver interface {
-	WineAdded(ctx context.Context) (<-chan Wine, error)
+	MeChanged(ctx context.Context) (<-chan *User, error)
+	PositionChanged(ctx context.Context, collectionID string) (<-chan *WinePosition, error)
 }
 
 type executableSchema struct {
@@ -135,8 +149,26 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "addWine":
-			out.Values[i] = ec._Mutation_addWine(ctx, field)
+		case "signup":
+			out.Values[i] = ec._Mutation_signup(ctx, field)
+		case "verifyEmail":
+			out.Values[i] = ec._Mutation_verifyEmail(ctx, field)
+		case "signin":
+			out.Values[i] = ec._Mutation_signin(ctx, field)
+		case "updateUser":
+			out.Values[i] = ec._Mutation_updateUser(ctx, field)
+		case "removeUser":
+			out.Values[i] = ec._Mutation_removeUser(ctx, field)
+		case "createCollection":
+			out.Values[i] = ec._Mutation_createCollection(ctx, field)
+		case "updateCollection":
+			out.Values[i] = ec._Mutation_updateCollection(ctx, field)
+		case "removeCollection":
+			out.Values[i] = ec._Mutation_removeCollection(ctx, field)
+		case "addPosition":
+			out.Values[i] = ec._Mutation_addPosition(ctx, field)
+		case "updatePosition":
+			out.Values[i] = ec._Mutation_updatePosition(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -145,7 +177,607 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
-func (ec *executionContext) _Mutation_addWine(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Mutation_signup(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["email"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["email"] = arg0
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().Signup(ctx, args["email"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalBoolean(*res)
+}
+
+func (ec *executionContext) _Mutation_verifyEmail(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["token"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["token"] = arg0
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().VerifyEmail(ctx, args["token"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalBoolean(*res)
+}
+
+func (ec *executionContext) _Mutation_signin(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["email"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["email"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["password"]; ok {
+		var err error
+		arg1, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["password"] = arg1
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().Signin(ctx, args["email"].(string), args["password"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["email"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["email"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["firstName"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["firstName"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["lastName"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["lastName"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["password"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["password"] = arg3
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().UpdateUser(ctx, args["email"].(*string), args["firstName"].(*string), args["lastName"].(*string), args["password"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalBoolean(*res)
+}
+
+func (ec *executionContext) _Mutation_removeUser(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 bool
+	if tmp, ok := rawArgs["deleteCollections"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalBoolean(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["deleteCollections"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["reason"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["reason"] = arg1
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().RemoveUser(ctx, args["deleteCollections"].(bool), args["reason"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalBoolean(*res)
+}
+
+func (ec *executionContext) _Mutation_createCollection(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["name"] = arg0
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().CreateCollection(ctx, args["name"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalID(*res)
+}
+
+func (ec *executionContext) _Mutation_updateCollection(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["name"]; ok {
+		var err error
+		arg1, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["name"] = arg1
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().UpdateCollection(ctx, args["id"].(string), args["name"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalBoolean(*res)
+}
+
+func (ec *executionContext) _Mutation_removeCollection(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["id"] = arg0
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().RemoveCollection(ctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalBoolean(*res)
+}
+
+func (ec *executionContext) _Mutation_addPosition(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["collectionID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["collectionID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["winery"]; ok {
+		var err error
+		arg1, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["winery"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["varietal"]; ok {
+		var err error
+		arg2, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["varietal"] = arg2
+	var arg3 int
+	if tmp, ok := rawArgs["vintage"]; ok {
+		var err error
+		arg3, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["vintage"] = arg3
+	var arg4 int
+	if tmp, ok := rawArgs["bottleSize"]; ok {
+		var err error
+		arg4, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["bottleSize"] = arg4
+	var arg5 int
+	if tmp, ok := rawArgs["numBottles"]; ok {
+		var err error
+		arg5, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["numBottles"] = arg5
+	var arg6 *string
+	if tmp, ok := rawArgs["compartment"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg6 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["compartment"] = arg6
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().AddPosition(ctx, args["collectionID"].(string), args["winery"].(string), args["varietal"].(string), args["vintage"].(int), args["bottleSize"].(int), args["numBottles"].(int), args["compartment"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalBoolean(*res)
+}
+
+func (ec *executionContext) _Mutation_updatePosition(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["collectionID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["collectionID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["winery"]; ok {
+		var err error
+		arg1, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["winery"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["varietal"]; ok {
+		var err error
+		arg2, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["varietal"] = arg2
+	var arg3 int
+	if tmp, ok := rawArgs["vintage"]; ok {
+		var err error
+		arg3, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["vintage"] = arg3
+	var arg4 int
+	if tmp, ok := rawArgs["bottleSize"]; ok {
+		var err error
+		arg4, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["bottleSize"] = arg4
+	var arg5 int
+	if tmp, ok := rawArgs["numBottles"]; ok {
+		var err error
+		arg5, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["numBottles"] = arg5
+	var arg6 *string
+	if tmp, ok := rawArgs["compartment"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg6 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["compartment"] = arg6
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().UpdatePosition(ctx, args["collectionID"].(string), args["winery"].(string), args["varietal"].(string), args["vintage"].(int), args["bottleSize"].(int), args["numBottles"].(int), args["compartment"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalBoolean(*res)
+}
+
+var queryImplementors = []string{"Query"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, queryImplementors)
+
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+	})
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Query")
+		case "me":
+			out.Values[i] = ec._Query_me(ctx, field)
+		case "wine":
+			out.Values[i] = ec._Query_wine(ctx, field)
+		case "collection":
+			out.Values[i] = ec._Query_collection(ctx, field)
+		case "myCollections":
+			out.Values[i] = ec._Query_myCollections(ctx, field)
+		case "positions":
+			out.Values[i] = ec._Query_positions(ctx, field)
+		case "__type":
+			out.Values[i] = ec._Query___type(ctx, field)
+		case "__schema":
+			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().Me(ctx)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(User)
+		return ec._User(ctx, field.Selections, &res)
+	})
+}
+
+func (ec *executionContext) _Query_wine(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args := map[string]interface{}{}
 	var arg0 string
@@ -188,89 +820,6 @@ func (ec *executionContext) _Mutation_addWine(ctx context.Context, field graphql
 		}
 	}
 	args["bottleSize"] = arg3
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Mutation"
-	rctx.Args = args
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return ec.resolvers.Mutation().AddWine(ctx, args["winery"].(string), args["varietal"].(string), args["vintage"].(int), args["bottleSize"].(int))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Wine)
-	if res == nil {
-		return graphql.Null
-	}
-	return ec._Wine(ctx, field.Selections, res)
-}
-
-var queryImplementors = []string{"Query"}
-
-// nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
-	fields := graphql.CollectFields(ctx, sel, queryImplementors)
-
-	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Object: "Query",
-	})
-
-	out := graphql.NewOrderedMap(len(fields))
-	for i, field := range fields {
-		out.Keys[i] = field.Alias
-
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Query")
-		case "wine":
-			out.Values[i] = ec._Query_wine(ctx, field)
-		case "__type":
-			out.Values[i] = ec._Query___type(ctx, field)
-		case "__schema":
-			out.Values[i] = ec._Query___schema(ctx, field)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-
-	return out
-}
-
-func (ec *executionContext) _Query_wine(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["winery"]; ok {
-		var err error
-		arg0, err = graphql.UnmarshalString(tmp)
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["winery"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["vintage"]; ok {
-		var err error
-		arg1, err = graphql.UnmarshalInt(tmp)
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["vintage"] = arg1
-	var arg2 int
-	if tmp, ok := rawArgs["bottle_size"]; ok {
-		var err error
-		arg2, err = graphql.UnmarshalInt(tmp)
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["bottle_size"] = arg2
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Object: "Query",
 		Args:   args,
@@ -286,7 +835,7 @@ func (ec *executionContext) _Query_wine(ctx context.Context, field graphql.Colle
 		}()
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().Wine(ctx, args["winery"].(string), args["vintage"].(int), args["bottle_size"].(int))
+			return ec.resolvers.Query().Wine(ctx, args["winery"].(string), args["varietal"].(string), args["vintage"].(int), args["bottleSize"].(int))
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -296,6 +845,135 @@ func (ec *executionContext) _Query_wine(ctx context.Context, field graphql.Colle
 			return graphql.Null
 		}
 		return ec._Wine(ctx, field.Selections, res)
+	})
+}
+
+func (ec *executionContext) _Query_collection(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["id"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().Collection(ctx, args["id"].(string))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*WineCollection)
+		if res == nil {
+			return graphql.Null
+		}
+		return ec._WineCollection(ctx, field.Selections, res)
+	})
+}
+
+func (ec *executionContext) _Query_myCollections(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().MyCollections(ctx)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]*WineCollection)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+				return ec._WineCollection(ctx, field.Selections, res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_positions(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["collectionID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["collectionID"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().Positions(ctx, args["collectionID"].(string))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]*WinePosition)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+				return ec._WinePosition(ctx, field.Selections, res[idx1])
+			}())
+		}
+		return arr1
 	})
 }
 
@@ -365,16 +1043,18 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	}
 
 	switch fields[0].Name {
-	case "wineAdded":
-		return ec._Subscription_wineAdded(ctx, fields[0])
+	case "meChanged":
+		return ec._Subscription_meChanged(ctx, fields[0])
+	case "positionChanged":
+		return ec._Subscription_positionChanged(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
 }
 
-func (ec *executionContext) _Subscription_wineAdded(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+func (ec *executionContext) _Subscription_meChanged(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{Field: field})
-	results, err := ec.resolvers.Subscription().WineAdded(ctx)
+	results, err := ec.resolvers.Subscription().MeChanged(ctx)
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -385,9 +1065,171 @@ func (ec *executionContext) _Subscription_wineAdded(ctx context.Context, field g
 			return nil
 		}
 		var out graphql.OrderedMap
-		out.Add(field.Alias, func() graphql.Marshaler { return ec._Wine(ctx, field.Selections, &res) }())
+		out.Add(field.Alias, func() graphql.Marshaler {
+			if res == nil {
+				return graphql.Null
+			}
+			return ec._User(ctx, field.Selections, res)
+		}())
 		return &out
 	}
+}
+
+func (ec *executionContext) _Subscription_positionChanged(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["collectionID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalID(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["collectionID"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{Field: field})
+	results, err := ec.resolvers.Subscription().PositionChanged(ctx, args["collectionID"].(string))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		var out graphql.OrderedMap
+		out.Add(field.Alias, func() graphql.Marshaler {
+			if res == nil {
+				return graphql.Null
+			}
+			return ec._WinePosition(ctx, field.Selections, res)
+		}())
+		return &out
+	}
+}
+
+var userImplementors = []string{"User"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *User) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, userImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("User")
+		case "email":
+			out.Values[i] = ec._User_email(ctx, field, obj)
+		case "firstName":
+			out.Values[i] = ec._User_firstName(ctx, field, obj)
+		case "lastName":
+			out.Values[i] = ec._User_lastName(ctx, field, obj)
+		case "emailConfirmed":
+			out.Values[i] = ec._User_emailConfirmed(ctx, field, obj)
+		case "hasPassword":
+			out.Values[i] = ec._User_hasPassword(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Email, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _User_firstName(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.FirstName, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+func (ec *executionContext) _User_lastName(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.LastName, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+func (ec *executionContext) _User_emailConfirmed(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.EmailConfirmed, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	return graphql.MarshalBoolean(res)
+}
+
+func (ec *executionContext) _User_hasPassword(ctx context.Context, field graphql.CollectedField, obj *User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.HasPassword, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	return graphql.MarshalBoolean(res)
 }
 
 var wineImplementors = []string{"Wine"}
@@ -617,6 +1459,196 @@ func (ec *executionContext) _Wine_price(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	return graphql.MarshalInt(*res)
+}
+
+var wineCollectionImplementors = []string{"WineCollection"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _WineCollection(ctx context.Context, sel ast.SelectionSet, obj *WineCollection) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, wineCollectionImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WineCollection")
+		case "id":
+			out.Values[i] = ec._WineCollection_id(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._WineCollection_name(ctx, field, obj)
+		case "owner":
+			out.Values[i] = ec._WineCollection_owner(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _WineCollection_id(ctx context.Context, field graphql.CollectedField, obj *WineCollection) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "WineCollection"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalID(res)
+}
+
+func (ec *executionContext) _WineCollection_name(ctx context.Context, field graphql.CollectedField, obj *WineCollection) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "WineCollection"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Name, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+func (ec *executionContext) _WineCollection_owner(ctx context.Context, field graphql.CollectedField, obj *WineCollection) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "WineCollection"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Owner, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]User)
+	arr1 := graphql.Array{}
+	for idx1 := range res {
+		arr1 = append(arr1, func() graphql.Marshaler {
+			rctx := graphql.GetResolverContext(ctx)
+			rctx.PushIndex(idx1)
+			defer rctx.Pop()
+			return ec._User(ctx, field.Selections, &res[idx1])
+		}())
+	}
+	return arr1
+}
+
+var winePositionImplementors = []string{"WinePosition"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _WinePosition(ctx context.Context, sel ast.SelectionSet, obj *WinePosition) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, winePositionImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WinePosition")
+		case "collectionID":
+			out.Values[i] = ec._WinePosition_collectionID(ctx, field, obj)
+		case "compartment":
+			out.Values[i] = ec._WinePosition_compartment(ctx, field, obj)
+		case "wine":
+			out.Values[i] = ec._WinePosition_wine(ctx, field, obj)
+		case "numBottles":
+			out.Values[i] = ec._WinePosition_numBottles(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _WinePosition_collectionID(ctx context.Context, field graphql.CollectedField, obj *WinePosition) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "WinePosition"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.CollectionID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalID(res)
+}
+
+func (ec *executionContext) _WinePosition_compartment(ctx context.Context, field graphql.CollectedField, obj *WinePosition) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "WinePosition"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Compartment, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+func (ec *executionContext) _WinePosition_wine(ctx context.Context, field graphql.CollectedField, obj *WinePosition) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "WinePosition"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Wine, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(Wine)
+	return ec._Wine(ctx, field.Selections, &res)
+}
+
+func (ec *executionContext) _WinePosition_numBottles(ctx context.Context, field graphql.CollectedField, obj *WinePosition) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "WinePosition"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.NumBottles, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	return graphql.MarshalInt(res)
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -1510,15 +2542,41 @@ func (ec *executionContext) introspectType(name string) *introspection.Type {
 
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `type Query {
-    wine(winery: String!, vintage: Int!, bottle_size: Int!): Wine
+    # wine(winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!): Wine
+    me: User!
+    wine(winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!): Wine
+    collection(id: ID!): WineCollection
+    myCollections: [WineCollection]
+    positions(collectionID: ID!): [WinePosition]
 }
 
 type Mutation {
-    addWine(winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!): Wine
+    signup(email: String!): Boolean
+    verifyEmail(token: String!): Boolean
+    signin(email: String!, password: String!): String
+    updateUser(email: String, firstName: String, lastName: String, password: String): Boolean
+    removeUser(deleteCollections: Boolean!, reason: String): Boolean
+
+    createCollection(name: String!): ID
+    updateCollection(id: ID!, name: String!): Boolean
+    removeCollection(id: ID!): Boolean
+    addPosition(collectionID: ID!, winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!, numBottles: Int!, compartment: String): Boolean
+    updatePosition(collectionID: ID!, winery: String!, varietal: String!, vintage: Int!, bottleSize: Int!, numBottles: Int!, compartment: String): Boolean
 }
 
 type Subscription {
-    wineAdded: Wine!
+    meChanged: User
+    positionChanged(collectionID: ID!): WinePosition
+}
+
+type User {
+    email: String!
+
+    firstName: String
+    lastName: String
+
+    emailConfirmed: Boolean!
+    hasPassword: Boolean!
 }
 
 type Wine {
@@ -1537,79 +2595,16 @@ type Wine {
     price: Int
 }
 
+type WineCollection {
+    id: ID!
+    name: String
+    owner: [User!]!
+}
 
-
-# type Query {
-#     wine(winery: String!, vintage: Int!, bottle_size: Int!): Wine
-#     collection(id: ID): WineCollection
-#     positions(collection_id: ID): [WinePosition]
-#     me: User
-# }
-
-# type Mutation {
-#     create_user(email: String!): Boolean
-#     verify_email(token: String!): Boolean
-#     update_user(user: User): Boolean
-
-#     create_collection(name: String!): Boolean
-#     add_position(collection_id: ID!, winery: String!, vintage: Int!, bottle_size: Int!, num_bottles: Int!, compartment: String): Boolean
-#     update_position(collection_id: ID!, winery: String!, vintage: Int!, bottle_size: Int!, num_bottles: Int!, compartment: String): Boolean
-# }
-
-# type Subscription {
-
-# }
-
-
-# "Prevents access to a field if the user doesnt have the matching role"
-# directive @hasRole(role: Role!) on FIELD_DEFINITION
-
-# enum Role {
-#     ADMIN
-#     USER
-# }
-
-
-# type Wine {
-#     winery: String!
-#     vintage: Int!
-#     bottle_size: Int!
-
-#     region: String
-#     varietal: String
-
-#     peak: Int
-#     hold: Int
-#     drink: Int
-#     taste: Int
-
-#     price: Int
-# }
-
-# type WinePosition {
-#     collection_id: ID!
-#     compartment: String
-#     wine: Wine!
-#     num_bottles: Int!
-# }
-
-# type WineCollection {
-#     id: ID!
-#     name: String
-#     owners: [User!]!
-# }
-
-
-# type Query {
-#   todos: [Todo!]!
-# }
-
-# input NewTodo {
-#   text: String!
-#   userId: String!
-# }
-
-# type Mutation {
-#   createTodo(input: NewTodo!): Todo!
-# }`},
+type WinePosition {
+    collectionID: ID!
+    compartment: String
+    wine: Wine!
+    numBottles: Int!
+}`},
 )
